@@ -1,3 +1,76 @@
+{
+  function ASTtoRegEx(exprs) {
+    switch(Object.keys(exprs)[0]) {
+    case "conjunction":
+      return ASTtoRegEx(exprs.conjunction.lhs) + 
+        ASTtoRegEx(exprs.conjunction.rhs);
+      break;
+    case "disjunction":
+      return "(?:" + ASTtoRegEx(exprs.disjunction.lhs) + "|" +
+        ASTtoRegEx(exprs.disjunction.rhs) + ")";
+      break;
+    case "quantifier":
+      var lower = exprs.quantifier.lower;
+      var upper = exprs.quantifier.upper;
+      if(upper === Infinity) { upper = ''; }
+      var suffix = "{" + lower + "," + upper + "}";
+      if(suffix === "{0,}") { suffix = "*"; }
+      else if(suffix === "{1,}") { suffix = "+"; }
+      else if(suffix === "{0,1}") { suffix = "?"; }
+      if(exprs.quantifier.lazy) { suffix += "?"; }
+      var clone = {};
+      Object.keys(exprs).forEach(function(key) {
+        if(key !== "quantifier") { clone[key] = exprs[key]; }
+      });
+      return ASTtoRegEx(clone) + suffix;
+      break;
+    case "block":
+      var inside = ASTtoRegEx(exprs.block);
+      var quals = exprs.qualifiers || [];
+      if(quals.indexOf("capture") !== -1) {
+        return "(" + inside + ")";
+      } else if(quals.indexOf("positive_lookahead") !== -1) {
+        return "(?=" + inside + ")";
+      } else if(quals.indexOf("negative_lookahead") !== -1) {
+        return "(?!" + inside + ")";
+      } else {
+        return "(?:" + inside + ")";
+      }
+      break;
+    case "set":
+      var elems = exprs.set;
+      for(var i = 0; i < elems.length; ++i) {
+        if(elems[i].length === 1 &&
+           "-/[\]^".indexOf(elems[i]) !== -1) {
+          elems[i] = "\\" + elems[i];
+        }
+      }
+      return "[" + elems.join("") + "]";
+    case "negatedSet":
+      var elems = exprs.negatedSet;
+      for(var i = 0; i < elems.length; ++i) {
+        if("-/[\]^".indexOf(elems[i]) !== -1 &&
+           elems[i].length === 1) {
+          elems[i] = "\\" + elems[i];
+        }
+      }
+      return "[^" + elems.join("") + "]";
+    case "literal":
+      var chars = exprs.literal;
+      for(var i = 0; i < chars.length; ++i) {
+        if(".?+*\/|{}[]()".indexOf(chars[i]) !== -1 &&
+           chars[i].length === 1) {
+          chars[i] = "\\" + chars[i];
+        }
+        if(chars[i] === "CHAR") chars[i] = ".";
+      }
+      return chars.join("");
+      break;
+    }
+    throw new Error("Invalid AST: " + JSON.stringify(exprs));
+  }
+  var userDefines = {};
+}
 start
   = [ \t\n]* definitions [ \t\n]+ body:body [ \t\n]*
     { return body; }
@@ -11,9 +84,14 @@ definition
     { userDefines[chars.join("")] = exprs; }
 body
   = from:from_clause [ \t\n]+ to:to_clause [ \t\n]+ match:match_clause
-    { return { match: match, from: from, to: to } }
+    {
+      var regexp = match.regexp;
+      if(from === "linestart") regexp = "^" + regexp;
+      if(to === "lineend")     regexp = regexp + "$";
+      return new RegExp(regexp, match.settings);
+    }
   / match:match_clause
-    { return { match: match } }
+    { return new RegExp(match.regexp, match.settings);; }
 from_clause
   = "from" [ \t\n]+ locator:start_locator
     { return locator; }
@@ -28,9 +106,9 @@ end_locator
   / "lineend" { return "lineend"; }
 match_clause
   = "match" [ \t\n]* settings:match_settings [ \t\n]* "{" [ \t\n]+ exprs:expressions [ \t\n]* "}"
-    { return { ast: exprs, settings: settings.join("") }; }
+    { return { regexp: ASTtoRegEx(exprs), settings: settings.join("") }; }
   / "match" [ \t\n]+ "{" [ \t\n]* exprs:expressions [ \t\n]* "}"
-    { return { ast: exprs }; }
+    { return { regexp: ASTtoRegEx(exprs) }; }
 match_settings
   = lhs:match_setting [ \t\n]+ rhs:match_settings
     { return lhs.concat(rhs); }
