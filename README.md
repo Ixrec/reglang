@@ -25,7 +25,7 @@ Even if you have a lot of experience with regular expressions, I hope we can agr
 
 # Motivation
 
-For simple patterns, regular expressions are often far more straightforward than doing string manipulation by hand, but regular expressions very quickly become an uneadable mess, not to mention the various "flavors" of regular expression are notoriously incompatible with each other, despite often having similar feature sets.
+For simple patterns, regular expressions are often far more straightforward than doing string manipulation by hand, but regular expressions very quickly become an unreadable mess, not to mention the various "flavors" of regular expression are notoriously incompatible with each other, despite often having similar feature sets.
 
 RegLang is meant to be more readable than regular expressions, but still far more straightforward for pattern matching tasks than manipulating the string yourself. Since the functionality of regular expessions leaves little to be desired, RegLang is implemented by compiling to regular expressions.
 
