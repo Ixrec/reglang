@@ -1,0 +1,49 @@
+html {
+	height: 100%;
+}
+
+body {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+h1 {
+	text-align: center;
+	font-size: 140%;
+}
+h2 {
+	text-align: center;
+	font-size: 110%;
+}
+textarea {
+    resize: none;
+}
+
+.flexbox {
+	display: flex;
+	padding: 5px;
+	justify-content: space-between;
+}
+.horizontal {
+	flex-direction: row;
+}
+.vertical {
+	flex-direction: column;
+}
+.grow {
+	flex: 1;
+}
+.grow2 {
+	flex: 2;
+}
+.monospace {
+	font-family: monospace;
+}
+
+#inputs {
+	flex: 5;
+}
+#outputs {
+}
+

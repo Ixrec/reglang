@@ -7,44 +7,59 @@
     <meta name="keywords" content="regular expression, JavaScript, reglang">
     <meta name="description" content="RegLang is a readable pattern matching language intended to be compiled to regular expressions.">
     <title>RegLang Demo</title>
+    <link rel="stylesheet" href="demo.css">
   </head>
   <body>
-    <header id="header">
-      <h1><a href="https://github.com/Ixrec/reglang">RegLang - A readable pattern matching language</a></h1>
-    </header>
+	<header id="header" class="flexbox vertical">
+		<h1><a href="https://github.com/Ixrec/reglang">RegLang</a> - A readable pattern matching language</h1>
+		<h2>Demo of compilation to Javascript RegExp objects</h2>
+	</header>
 
-	<div id="content">
-
-<textarea class="code" id="reglang-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+	<div class="grow flexbox vertical" height="100%" id="content">
+		<div class="flexbox horizontal" id="inputs">
+			<textarea class="grow2" id="reglang-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 from linestart to lineend match caseinsensitive {
-    0to1 "-" and
-    1orMore digit and
-    0to1 { "." and 0orMore digit } and
-    0to1 { 
-        "e" and
-        0to1 ["+", "-"] and
-        1orMore digit
-    }
+	0to1 "-" and
+	1orMore digit and
+	0to1 { "." and 0orMore digit } and
+	0to1 { 
+		"e" and
+		0to1 ["+", "-"] and
+		1orMore digit
+	}
 }
-</textarea>
-
-<button id="generate">Generate RegEx</button>
-
-<div id="regex-output">
-</div>
-
-<textarea class="code" id="matchables" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+			</textarea>
+			<textarea class="grow" id="matches-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 1234
 3.14
+e1e
 -1e3
-</textarea>
+abcde
++-12
+0.435</textarea>
+		</div>
 
-<div id="match-output">
-</div>
+		<div class="flexbox horizontal" id="outputs">
+			<div class="grow2" id="regex-output">
+				<h4>Compiled output (Javascript flavor)</h4>
+				<div>
+					<span>Pattern: </span>
+					<span class="monospace" id="regex-pattern-output"></span>
+				</div>
+				<div>
+					<span>Flags: </span>
+					<span class="monospace" id="regex-flags-output"></span>
+				</div>
+			</div>
 
-	<script src="parser.js"></script>
-	<script src="demo.js"></script>
+			<div class="grow">
+				<h4>Test Matches</h4>
+				<div id="match-output"></div>
+			</div>
 
-    </div>
+		</div>
+	</div>
+    <script src="parser.js"></script>
+    <script src="demo.js"></script>
   </body>
 </html>
