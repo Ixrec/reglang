@@ -1,33 +1,66 @@
-document.addEventListener("DOMContentLoaded", generateRegex);
+document.addEventListener("DOMContentLoaded", scheduleRegexGeneration);
 
-document.getElementById('generate').addEventListener("click", generateRegex);
+function scheduleRegexGeneration() {
+	var prevReglang = '';
+	var prevMatchesRaw = '';
+	var regexPattern;
+	var regexFlags;
 
-function generateRegex(){
-	var reglangInput = document.getElementById("reglang-input").innerHTML;
-	console.log(reglangInput);
+	function update() {
+		setTimeout(update, 500);
+		var reglang = document.getElementById("reglang-input").value;
+		var reglangChanged = prevReglang !== reglang;
+		if(reglangChanged) {
+			prevReglang = reglang;
+			var regexArgs;
+			try {
+				regexArgs = updateRegex(reglang);
+			} catch(e) {
+				console.log(e);
+				return;
+			}
+			regexPattern = regexArgs.string;
+			regexFlags = regexArgs.settings;
+		}
+		var rawMatches = document.getElementById("matches-input").value;
+		if(reglangChanged || prevMatchesRaw !== rawMatches) {
+			prevMatchesRaw = rawMatches;
+			var testCases = rawMatches.split('\n').filter(c => !!c);
+			updateTestMatches(regexPattern, regexFlags, testCases);
+		}
+	}
+	update();
+}
+
+function updateRegex(reglangInput){
 	var parseTree = parser.parse(reglangInput);
-	console.log(parseTree);
-	var regexArgs = toRegex(parseTree);
-	var output = JSON.stringify(regexArgs);
 
-	document.getElementById("regex-output").innerHTML = output;
+	var core = ASTtoRegEx(parseTree.match.ast);
+	var regex = "";
+    if(parseTree.from === "linestart") { regex += "^"; }
+	regex += core;
+    if(parseTree.to === "lineend") { regex += "$"; }
 
-	var matchablesRaw = document.getElementById("matchables").innerHTML;
-	var testCases = matchablesRaw.split('\n').filter(c => !!c);
-	console.log(testCases);
-	var regexObject = new RegExp(regexArgs.string, regexArgs.settings);
-	var testResults = testCases.map(str => regexObject.test(str));
-
-	document.getElementById("match-output").innerHTML = testResults.join('\n');
+	var regexArgs = { string: regex, settings: parseTree.match.settings };
+	console.log("Generated regexArgs: " + JSON.stringify(regexArgs, null, 4));
+	document.getElementById("regex-pattern-output").textContent = regexArgs.string.replace(/ /g, '&nbsp;');
+	document.getElementById("regex-flags-output").textContent = regexArgs.settings.replace(/ /g, '&nbsp;');
+	return regexArgs;
 };
 
-function toRegex(reglangAST) {
-	var core = ASTtoRegEx(reglangAST.match.ast);
-	var regex = "";
-    if(reglangAST.from === "linestart") { regex += "^"; }
-	regex += core;
-    if(reglangAST.to === "lineend") { regex += "$"; }
-	return { string: regex, settings: reglangAST.match.settings };
+function updateTestMatches(pattern, flags, testCases) {
+	var regexObject = new RegExp(pattern, flags);
+	console.log("testCases: " + testCases);
+	var testResults = testCases.map(str => regexObject.test(str));
+	console.log("testResults: " + testResults);
+
+	var resultsElem = document.getElementById("match-output");
+	while (resultsElem.firstChild) { resultsElem.removeChild(resultsElem.firstChild); }
+	testResults.forEach(function(result) {
+		var node = document.createElement('div');
+		node.textContent = result;
+		resultsElem.appendChild(node);
+	});	
 }
 
 function ASTtoRegEx(exprs) {
